@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # encoding: utf-8
-import smtplib, sys, datetime, os
+
+import smtplib, datetime, os, tarfile
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
@@ -83,12 +84,24 @@ def main():
                       help="Add an attachment to the email", metavar="FILE")
     
     parser.add_option("-u", "--user", dest="user",
-                      help="SMTP username (most likely your GMail username)", metavar="USER")
+                      help="SMTP username (or your GMail username)", metavar="USER")
                       
     parser.add_option("-p", "--pass", dest="passwd",
-                      help="SMTP password (most likely your GMail password)", metavar="PASS")
+                      help="SMTP password (or your GMail password)", metavar="PASS")
     
     (options, args) = parser.parse_args()
+
+    tar = tarfile.open("gmailer-backup%s.tar.gz"%str(datetime.date.today()), "w:gz")
+
+    namelist=["/Users/lenni/httpd.conf"]
+    for name in namelist:
+        tarinfo = tar.gettarinfo(name, "fakeproj-1.0/" + name)
+        tarinfo.uid = 123
+        tarinfo.gid = 456
+        tarinfo.uname = "johndoe"
+        tarinfo.gname = "fake"
+        tar.addfile(tarinfo, file(name))
+    tar.close()
     
     mail=Email()
     mail.smtp_user=options.user
