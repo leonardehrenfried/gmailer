@@ -9,7 +9,7 @@ from email import Encoders
 from optparse import OptionParser
 
 
-class Email():
+class Email:
     sender=None
     recipient=None
     
@@ -66,7 +66,6 @@ class Email():
         if (self.check_all_arguments()):
             message=self.construct_message()
             # send the mail
-            
             mailServer = smtplib.SMTP(self.smtp_server, self.smtp_port)
             mailServer.ehlo()
             mailServer.starttls()
@@ -76,12 +75,21 @@ class Email():
             # Should be mailServer.quit(), but that crashes...
             mailServer.close()
 
+def generate_text(attachments):
+    msg="This is an automatic backup by gmailer.py. The contents of this backup are:\n\n"
+    for i in attachments:
+        msg+="\t * "+i
+    msg+="\n\n"
+        
+    msg+="gmailer.py's homepage is http://lenni.info"
+    return msg
+
 def main():
     """docstring for main"""
     
     parser = OptionParser()
-    parser.add_option("-a", "--attachment", dest="attachment",
-                      help="Add an attachment to the email", metavar="FILE")
+    parser.add_option("-a", "--archive-file-name", dest="archive_file",
+                      help="Name of the archive file attached to the email", metavar="FILE")
     
     parser.add_option("-u", "--user", dest="user",
                       help="SMTP username (or your GMail username)", metavar="USER")
@@ -89,26 +97,35 @@ def main():
     parser.add_option("-p", "--pass", dest="passwd",
                       help="SMTP password (or your GMail password)", metavar="PASS")
     
-    (options, args) = parser.parse_args()
+    (options, attachments) = parser.parse_args()
+    
+    path="/tmp/"
+    
+    filename="gmailer-backup-%s.tar.bz2"% str(datetime.date.today())
+    
+    tar = tarfile.open(filename, "w:bz2")
 
-    tar = tarfile.open("gmailer-backup%s.tar.gz"%str(datetime.date.today()), "w:gz")
-
-    namelist=["/Users/lenni/httpd.conf"]
-    for name in namelist:
-        tarinfo = tar.gettarinfo(name, "fakeproj-1.0/" + name)
-        tarinfo.uid = 123
+    for name in attachments:
+        """tarinfo = tar.gettarinfo(name, "fakeproj-1.0/" + name)
+        tarinfo.uid = os.getuid()
         tarinfo.gid = 456
-        tarinfo.uname = "johndoe"
-        tarinfo.gname = "fake"
-        tar.addfile(tarinfo, file(name))
+        tarinfo.uname ="lenni"
+        tarinfo.gname = "agroup" """
+        tar.add(name)
+        print "Compressing %s..."% name
     tar.close()
     
+    print "Preparing email message..."
     mail=Email()
     mail.smtp_user=options.user
     mail.smtp_pass=options.passwd
-    mail.attachments.append(options.attachment)
+    mail.body=generate_text(attachments)
+    mail.attachments.append(filename)
+    print "Establishing connection to mail server..." 
     mail.send()
     print "Email sent to %s" % mail.recipient
+    os.remove(filename)
+    
 
 if __name__ == '__main__':
     main()
