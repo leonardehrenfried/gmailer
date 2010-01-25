@@ -1,0 +1,30 @@
+syntax: glob
+.DS_Store
+
+# build directories and files
+**/build/*
+build/*
+target/**.*
+dist/**.*
+*.pyc
+
+# Backup files left behind by the Emacs editor.
+*~
+# Lock files used by the Emacs editor.
+.\#*
+# Temporary files used by the vim editor.
+.*.swp
+# Temporary files used by TestMate
+._*
+# XCode user data
+**.pbxuser
+**.mode?v?
+**.perspectivev?
+# documentation
+**.docset/*
+# for those crazies using svn and hg at the same time
+*.svn*
+
+# temporary folders
+syntax: regexp
+.*/te?mp/.*

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # encoding: utf-8
 
-import smtplib, datetime, os, tarfile
+import smtplib, datetime, os, tarfile, getpass
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
@@ -75,10 +75,24 @@ class Email:
             # Should be mailServer.quit(), but that crashes...
             mailServer.close()
 
+def generate_text_from_file(file, msg, indents):
+    # generate right amount of indents
+    i=0
+    while i<indents:
+        msg+=" "
+        i+=1
+    msg+=file+"\n"
+    print msg
+    """if os.path.isdir(file):
+        for k in os.listdir(file):
+            msg+=generate_text_from_file(k, msg, indents+1)"""
+    return msg
+
 def generate_text(attachments):
-    msg="This is an automatic backup by gmailer.py. The contents of this backup are:\n\n"
+    msg=""    
     for i in attachments:
-        msg+="\t * "+i
+        msg+=generate_text_from_file(i,"", 0)
+        
     msg+="\n\n"
         
     msg+="gmailer.py's homepage is http://lenni.info"
@@ -96,8 +110,12 @@ def main():
                       
     parser.add_option("-p", "--pass", dest="passwd",
                       help="SMTP password (or your GMail password)", metavar="PASS")
+                      
+    parser.add_option("-s", "--subject", dest="subject",
+                    help="The subject line of the email", metavar="SUBJECT")
     
     (options, attachments) = parser.parse_args()
+    
     
     path="/tmp/"
     
@@ -116,10 +134,22 @@ def main():
     tar.close()
     
     print "Preparing email message..."
+    #ensuring the default values
+    if options.user==None:
+        options.user=raw_input("Please enter your GMail or SMTP username:")
+        
+    if options.passwd==None:
+        options.passwd=getpass.getpass("Please enter your password:")
+    
     mail=Email()
+    if options.subject!=None:
+        Email.subject_line="[Gmailer] "+options.subject
     mail.smtp_user=options.user
     mail.smtp_pass=options.passwd
-    mail.body=generate_text(attachments)
+    
+    print generate_text(attachments)
+    
+    #mail.body=
     mail.attachments.append(filename)
     print "Establishing connection to mail server..." 
     mail.send()
